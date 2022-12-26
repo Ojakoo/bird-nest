@@ -1,13 +1,13 @@
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 import { NextPage } from "next";
-import useSWR from 'swr'
+import useSWR from 'swr';
 
-const fetcher = (...args) => fetch(...args).then((res) => res.json())
+const fetcher = (...args) => fetch(...args).then(res => res.json())
 
 const Home: NextPage<null> = () => {
   // GET assignments.reaktor.com/birdnest/drones
-  const { data, error } = useSWR('/api/drones', fetcher)
+  const { data, error } = useSWR('api/drones', fetcher);
 
   if (error) return (  
   <>
@@ -40,6 +40,7 @@ const Home: NextPage<null> = () => {
   </> 
   )
 
+  console.log(data);
   return (
     <>
       <Head>
@@ -50,7 +51,7 @@ const Home: NextPage<null> = () => {
       </Head>
       <main className={styles.main}>
         <div>
-          Worked
+          {data.data}
         </div>
       </main>
     </>
