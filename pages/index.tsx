@@ -2,12 +2,25 @@ import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 import { NextPage } from "next";
 import useSWR from 'swr';
+import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 
-const fetcher = (...args) => fetch(...args).then(res => res.json())
+const axiosInstance: AxiosInstance = axios.create({});
+
+const fetcher = async ( path: string ) => {
+  console.log(path)
+
+  const request: AxiosRequestConfig = {
+    url: "/birdnest/drones",
+    method: "GET",
+    responseType: "document",
+  };
+  const response = await axiosInstance.request(request);
+  return response.data;
+};
 
 const Home: NextPage<null> = () => {
   // GET assignments.reaktor.com/birdnest/drones
-  const { data, error } = useSWR('api/drones', fetcher);
+  const { data, error } = useSWR('birdnest/drones', fetcher, { refreshInterval: 2000 });
 
   if (error) return (  
   <>
@@ -51,7 +64,7 @@ const Home: NextPage<null> = () => {
       </Head>
       <main className={styles.main}>
         <div>
-          {data.data}
+          Works
         </div>
       </main>
     </>
