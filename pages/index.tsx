@@ -4,25 +4,33 @@ import { NextPage } from "next";
 import useSWR from 'swr';
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 
+type FetcherArgs = {
+  url: string,
+  responseType: "json" | "document",
+}
+
 const axiosInstance: AxiosInstance = axios.create({});
 
-const fetcher = async ( path: string ) => {
-  console.log(path)
-
+const fetcher = async ({ url, responseType }: FetcherArgs) => {
   const request: AxiosRequestConfig = {
-    url: "/birdnest/drones",
+    url: url,
     method: "GET",
-    responseType: "document",
+    responseType: responseType,
   };
   const response = await axiosInstance.request(request);
-  return response.data;
+
+  if ( url === "/birdnest/drones" ) {
+    return response.data;
+  } else {
+    return response.data;
+  }
 };
 
 const Home: NextPage<null> = () => {
-  // GET assignments.reaktor.com/birdnest/drones
-  const { data, error } = useSWR('birdnest/drones', fetcher, { refreshInterval: 2000 });
+  const { data: drones, error: droneError } = useSWR({ url: 'birdnest/drones', responseType: "document"}, fetcher, { refreshInterval: 2000 });
+  const { data: pilots, error: pilotError } = useSWR({ url: 'birdnest/pilots/SN-rCkQs9fKmd', responseType: "json"}, fetcher);
 
-  if (error) return (  
+  if (droneError) return (  
   <>
     <Head>
       <title>Create Next App</title>
@@ -37,7 +45,7 @@ const Home: NextPage<null> = () => {
     </main>
   </>    
   )
-  if (!data) return (
+  if (!drones) return (
   <>
     <Head>
       <title>Create Next App</title>
@@ -53,7 +61,11 @@ const Home: NextPage<null> = () => {
   </> 
   )
 
-  console.log(data);
+  if (pilots) {
+    console.log(pilots);
+  }
+  console.log(drones);
+
   return (
     <>
       <Head>
