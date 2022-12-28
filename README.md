@@ -4,6 +4,10 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## App description
 
+Uses [Next.js custom server](https://nextjs.org/docs/advanced-features/custom-server) with Express to handle data fetching from api.
+
+Frontend logic is handled normally with Next.js.
+
 ### `Data`
 
 Drone positions

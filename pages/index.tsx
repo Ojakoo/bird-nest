@@ -1,43 +1,44 @@
 import Head from "next/head";
-import styles from "../styles/Home.module.css";
+import styles from "@styles/Home.module.css";
 import { NextPage } from "next";
 import useSWR from "swr";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 
 type FetcherArgs = {
   url: string;
-  responseType: "json" | "document";
+};
+
+type PilotInfo = {
+  name: string;
+  emailAddress: string;
+  phoneNumber: string;
+};
+
+type SWRReturn = {
+  data: PilotInfo[];
+  error?: any;
 };
 
 const axiosInstance: AxiosInstance = axios.create({});
 
-const fetcher = async ({ url, responseType }: FetcherArgs) => {
+const fetcher = async ({ url }: FetcherArgs) => {
   const request: AxiosRequestConfig = {
     url: url,
     method: "GET",
-    responseType: responseType,
+    responseType: "json",
   };
   const response = await axiosInstance.request(request);
 
-  if (url === "/birdnest/drones") {
-    return response.data;
-  } else {
-    return response.data;
-  }
+  return response.data;
 };
 
 const Home: NextPage<null> = () => {
-  const { data: drones, error: droneError } = useSWR(
-    { url: "birdnest/drones", responseType: "document" },
-    fetcher,
-    { refreshInterval: 2000 }
-  );
-  const { data: pilots, error: pilotError } = useSWR(
-    { url: "birdnest/pilots/SN-rCkQs9fKmd", responseType: "json" },
+  const { data: pilots, error: error }: SWRReturn = useSWR(
+    { url: "api/pilots" },
     fetcher
   );
 
-  if (droneError)
+  if (error)
     return (
       <>
         <Head>
@@ -51,7 +52,7 @@ const Home: NextPage<null> = () => {
         </main>
       </>
     );
-  if (!drones)
+  if (!pilots)
     return (
       <>
         <Head>
@@ -66,10 +67,7 @@ const Home: NextPage<null> = () => {
       </>
     );
 
-  if (pilots) {
-    console.log(pilots);
-  }
-  console.log(drones);
+  console.log(pilots);
 
   return (
     <>
@@ -80,7 +78,12 @@ const Home: NextPage<null> = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <div>Works</div>
+        <div>
+          <h1>Works</h1>
+          {pilots.map((pilot) => (
+            <p>{pilot.name}</p>
+          ))}
+        </div>
       </main>
     </>
   );
