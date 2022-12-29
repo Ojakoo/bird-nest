@@ -1,30 +1,96 @@
 import express from "express";
 import next from "next";
+import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
-// For api fetch
-function checkPilots() {
-  // write drone get logic here,
-  // check for violations
-  // data needs to be retained for 10 minutes
-  console.log("Fetching data from API");
-}
+// Types
+type APIgetArgs = {
+  url: string;
+  responseType: "json" | "document";
+  urlParams?: {
+    serialNumber: string;
+  };
+};
 
-let data = [
+type FrontendPilotInfo = {
+  fullname: string;
+  phoneNumber: string;
+  email: string;
+};
+
+const axiosInstance: AxiosInstance = axios.create({
+  baseURL: "http://assignments.reaktor.com",
+});
+
+const APIget = async ({ url, responseType }: APIgetArgs) => {
+  const request: AxiosRequestConfig = {
+    url: url,
+    method: "GET",
+    responseType: responseType,
+  };
+  const response = await axiosInstance.request(request);
+
+  return response.data;
+};
+
+// For api fetch
+const checkPilots = async () => {
+  reqCounter += 1;
+  console.log(
+    `Request number ${reqCounter} completed on ${new Date().toLocaleString()}`
+  );
+
+  const droneData = await APIget({
+    url: "/birdnest/drones",
+    responseType: "document",
+  });
+
+  const offendingSerialNumbers: Array<string> = [];
+
+  // Parse data and check if there are any offending drones
+
+  // Fetch the pilot data and add to server storage
+  // If pilot was seen (found in local) just update time stamp
+
+  // for (const serialNumber of offendingSerialNumbers) {
+  //   console.log("?");
+  //   const pilot = await APIget({
+  //     url: "/birdnest/pilots/:serialNumber",
+  //     responseType: "json",
+  //     urlParams: {
+  //       serialNumber: serialNumber,
+  //     },
+  //   });
+  // }
+
+  // we could check if entry is 10min old here but we can also
+  // drop old data while doing ssr, this however might lead to
+  // cases where swr fetches old cached data.
+
+  console.log(
+    `Request number ${reqCounter} completed on ${new Date().toLocaleString()}`
+  );
+};
+
+// Data array for storage
+let pilotInfo: Array<FrontendPilotInfo> = [
   {
-    name: "ASD",
-    emailAddress: "ASD",
+    fullname: "ASD",
+    email: "ASD",
     phoneNumber: "ASD",
   },
   {
-    name: "JAS",
-    emailAddress: "JAS",
+    fullname: "JAS",
+    email: "JAS",
     phoneNumber: "JAS",
   },
 ];
+
+// for debug and deploy monitoring
+let reqCounter = 0;
 
 app
   .prepare()
@@ -32,15 +98,13 @@ app
     const server = express();
 
     server.get("*", (req, res) => {
-      console.log(req.path);
-
       if (req.path === "/api/pilots") {
-        return res.json(data);
+        return res.json(pilotInfo);
       }
       return handle(req, res);
     });
 
-    // setInterval(checkPilots, 2000);
+    setInterval(checkPilots, 10000);
 
     server.listen(3000, (err?: any) => {
       if (err) throw err;
