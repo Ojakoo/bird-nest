@@ -1,6 +1,7 @@
 import express from "express";
 import next from "next";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import { PilotInfo } from "@models/PilotInfo";
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
@@ -13,12 +14,6 @@ type APIgetArgs = {
   urlParams?: {
     serialNumber: string;
   };
-};
-
-type FrontendPilotInfo = {
-  fullname: string;
-  phoneNumber: string;
-  email: string;
 };
 
 const axiosInstance: AxiosInstance = axios.create({
@@ -76,13 +71,15 @@ const checkPilots = async () => {
 };
 
 // Data array for storage
-let pilotInfo: Array<FrontendPilotInfo> = [
+let pilotInfo: Array<PilotInfo> = [
   {
+    pilotId: "assdf",
     fullname: "ASD",
     email: "ASD",
     phoneNumber: "ASD",
   },
   {
+    pilotId: "asgjn",
     fullname: "JAS",
     email: "JAS",
     phoneNumber: "JAS",

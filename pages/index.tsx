@@ -3,15 +3,10 @@ import styles from "@styles/Home.module.css";
 import { NextPage } from "next";
 import useSWR from "swr";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import { PilotInfo } from "@models/PilotInfo";
 
 type FetcherArgs = {
   url: string;
-};
-
-type PilotInfo = {
-  name: string;
-  emailAddress: string;
-  phoneNumber: string;
 };
 
 type SWRReturn = {
@@ -81,7 +76,7 @@ const Home: NextPage<null> = () => {
         <div>
           <h1>Works</h1>
           {pilots.map((pilot) => (
-            <p>{pilot.name}</p>
+            <p key={pilot.fullname}>{pilot.fullname}</p>
           ))}
         </div>
       </main>
