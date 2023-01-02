@@ -117,7 +117,13 @@ app
 
     server.get("*", (req, res) => {
       if (req.path === "/api/pilots") {
-        return res.json(pilotInfo);
+        const returnArray: Array<PilotInfo> = [];
+
+        pilotInfo.forEach((value) => {
+          returnArray.push(value);
+        });
+
+        return res.json(returnArray);
       }
       return handle(req, res);
     });

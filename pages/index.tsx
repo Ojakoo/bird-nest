@@ -10,7 +10,7 @@ type FetcherArgs = {
 };
 
 type SWRReturn = {
-  data: PilotInfo[];
+  data: Array<PilotInfo>;
   error?: any;
 };
 
@@ -30,10 +30,14 @@ const fetcher = async ({ url }: FetcherArgs) => {
 const Home: NextPage<null> = () => {
   const { data: pilots, error: error }: SWRReturn = useSWR(
     { url: "api/pilots" },
-    fetcher
+    fetcher,
+    {
+      refreshInterval: 2000,
+    }
   );
 
-  if (error)
+  if (error) {
+    console.log(error);
     return (
       <>
         <Head>
@@ -47,6 +51,7 @@ const Home: NextPage<null> = () => {
         </main>
       </>
     );
+  }
   if (!pilots)
     return (
       <>
@@ -74,10 +79,12 @@ const Home: NextPage<null> = () => {
       </Head>
       <main className={styles.main}>
         <div>
-          <h1>Works</h1>
-          {pilots.map((pilot) => (
-            <p key={pilot.fullname}>{pilot.fullname}</p>
-          ))}
+          <>
+            <h1>Works</h1>
+            {pilots.map((pilot) => (
+              <p>{pilot.fullname}</p>
+            ))}
+          </>
         </div>
       </main>
     </>
