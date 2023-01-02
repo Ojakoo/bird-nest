@@ -1,19 +1,41 @@
 import express from "express";
 import next from "next";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import { XMLParser } from "fast-xml-parser";
 import { PilotInfo } from "@models/PilotInfo";
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
+const parser = new XMLParser();
+
 // Types
 type APIgetArgs = {
   url: string;
   responseType: "json" | "document";
-  urlParams?: {
-    serialNumber: string;
-  };
+};
+
+type Drone = {
+  serialNumber: string;
+  model: string;
+  manufacturer: string;
+  mac: string;
+  ipv4: string;
+  ipv6: string;
+  firmware: string;
+  positionY: number;
+  positionX: number;
+  altitude: number;
+};
+
+type Pilot = {
+  pilotId: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  createdDt: Date;
+  email: string;
 };
 
 const axiosInstance: AxiosInstance = axios.create({
@@ -33,61 +55,60 @@ const APIget = async ({ url, responseType }: APIgetArgs) => {
 
 // For api fetch
 const checkPilots = async () => {
-  reqCounter += 1;
-  console.log(
-    `Request number ${reqCounter} completed on ${new Date().toLocaleString()}`
-  );
-
   const droneData = await APIget({
     url: "/birdnest/drones",
     responseType: "document",
   });
 
-  const offendingSerialNumbers: Array<string> = [];
-
   // Parse data and check if there are any offending drones
+  const drones: Array<Drone> = parser.parse(droneData).report.capture.drone;
 
-  // Fetch the pilot data and add to server storage
-  // If pilot was seen (found in local) just update time stamp
+  for (const drone of drones) {
+    // Calculate distance
+    // 100 meter radius, origin at position 250000,250000
+    const distance = Math.sqrt(
+      Math.pow(250 - drone.positionX / 1000, 2) +
+        Math.pow(250 - drone.positionY / 1000, 2)
+    );
 
-  // for (const serialNumber of offendingSerialNumbers) {
-  //   console.log("?");
-  //   const pilot = await APIget({
-  //     url: "/birdnest/pilots/:serialNumber",
-  //     responseType: "json",
-  //     urlParams: {
-  //       serialNumber: serialNumber,
-  //     },
-  //   });
-  // }
+    // Get data of offending pilots
+    if (distance <= 100) {
+      try {
+        const pilot: Pilot = await APIget({
+          url: `/birdnest/pilots/${drone.serialNumber}`,
+          responseType: "json",
+        });
+
+        // if pilotInfo has existing instance and distance is smaller use that
+        const existingEntry = pilotInfo.get(pilot.pilotId);
+
+        // use set to add and update enries
+        pilotInfo.set(pilot.pilotId, {
+          fullname: `${pilot.firstName} ${pilot.lastName}`,
+          email: pilot.email,
+          phoneNumber: pilot.phoneNumber,
+          lastSeen: new Date(),
+          smallestDistance:
+            existingEntry && distance > existingEntry.smallestDistance
+              ? existingEntry.smallestDistance
+              : distance,
+        });
+      } catch (error) {
+        // TODO: make better error handling
+        console.log("error");
+      }
+    }
+  }
+
+  console.log(pilotInfo);
 
   // we could check if entry is 10min old here but we can also
   // drop old data while doing ssr, this however might lead to
   // cases where swr fetches old cached data.
-
-  console.log(
-    `Request number ${reqCounter} completed on ${new Date().toLocaleString()}`
-  );
 };
 
-// Data array for storage
-let pilotInfo: Array<PilotInfo> = [
-  {
-    pilotId: "assdf",
-    fullname: "ASD",
-    email: "ASD",
-    phoneNumber: "ASD",
-  },
-  {
-    pilotId: "asgjn",
-    fullname: "JAS",
-    email: "JAS",
-    phoneNumber: "JAS",
-  },
-];
-
-// for debug and deploy monitoring
-let reqCounter = 0;
+// Data map for storage, pilotID as key
+let pilotInfo = new Map<string, PilotInfo>();
 
 app
   .prepare()
@@ -101,7 +122,7 @@ app
       return handle(req, res);
     });
 
-    setInterval(checkPilots, 10000);
+    setInterval(checkPilots, 2000);
 
     server.listen(3000, (err?: any) => {
       if (err) throw err;
