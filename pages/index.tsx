@@ -40,11 +40,9 @@ const Home: NextPage<null> = () => {
     }
   );
 
-  // if (error) return <div>Lol</div>;
+  if (error) return <div>Error</div>;
 
   if (!pilots) return <div>Loading</div>;
-
-  console.log(pilots);
 
   return (
     <>

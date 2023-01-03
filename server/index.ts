@@ -100,8 +100,6 @@ const checkPilots = async () => {
     }
   }
 
-  console.log(pilotInfo);
-
   // we could check if entry is 10min old here but we can also
   // drop old data while doing ssr, this however might lead to
   // cases where swr fetches old cached data.
