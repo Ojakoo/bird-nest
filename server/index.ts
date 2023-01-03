@@ -100,9 +100,15 @@ const checkPilots = async () => {
     }
   }
 
-  // we could check if entry is 10min old here but we can also
-  // drop old data while doing ssr, this however might lead to
-  // cases where swr fetches old cached data.
+  // check and remove entries older than 10 min
+  for (const [key, value] of pilotInfo) {
+    const diff = new Date().getTime() - value.lastSeen.getTime();
+    const minutes = Math.floor(((diff % 86400000) % 3600000) / 60000);
+
+    if (minutes > 9) {
+      pilotInfo.delete(key);
+    }
+  }
 };
 
 // Data map for storage, pilotID as key
