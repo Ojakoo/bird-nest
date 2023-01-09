@@ -55,59 +55,64 @@ const APIget = async ({ url, responseType }: APIgetArgs) => {
 
 // For api fetch
 const checkPilots = async () => {
-  const droneData = await APIget({
-    url: "/birdnest/drones",
-    responseType: "document",
-  });
+  try {
+    const droneData = await APIget({
+      url: "/birdnest/drones",
+      responseType: "document",
+    });
 
-  // Parse data and check if there are any offending drones
-  const drones: Array<Drone> = parser.parse(droneData).report.capture.drone;
+    // Parse data and check if there are any offending drones
+    const drones: Array<Drone> = parser.parse(droneData).report.capture.drone;
 
-  for (const drone of drones) {
-    // Calculate distance
-    // 100 meter radius, origin at position 250000,250000
-    const distance = Math.sqrt(
-      Math.pow(250 - drone.positionX / 1000, 2) +
-        Math.pow(250 - drone.positionY / 1000, 2)
-    );
+    for (const drone of drones) {
+      // Calculate distance
+      // 100 meter radius, origin at position 250000,250000
+      const distance = Math.sqrt(
+        Math.pow(250 - drone.positionX / 1000, 2) +
+          Math.pow(250 - drone.positionY / 1000, 2)
+      );
 
-    // Get data of offending pilots
-    if (distance <= 100) {
-      try {
-        const pilot: Pilot = await APIget({
-          url: `/birdnest/pilots/${drone.serialNumber}`,
-          responseType: "json",
-        });
+      // Get data of offending pilots
+      if (distance <= 100) {
+        try {
+          const pilot: Pilot = await APIget({
+            url: `/birdnest/pilots/${drone.serialNumber}`,
+            responseType: "json",
+          });
 
-        // if pilotInfo has existing instance and distance is smaller use that
-        const existingEntry = pilotInfo.get(pilot.pilotId);
+          // if pilotInfo has existing instance and distance is smaller use that
+          const existingEntry = pilotInfo.get(pilot.pilotId);
 
-        // use set to add and update enries
-        pilotInfo.set(pilot.pilotId, {
-          fullname: `${pilot.firstName} ${pilot.lastName}`,
-          email: pilot.email,
-          phoneNumber: pilot.phoneNumber,
-          lastSeen: new Date(),
-          smallestDistance:
-            existingEntry && distance > existingEntry.smallestDistance
-              ? existingEntry.smallestDistance
-              : distance,
-        });
-      } catch (error) {
-        // TODO: make better error handling
-        console.log("error");
+          // use set to add and update enries
+          pilotInfo.set(pilot.pilotId, {
+            fullname: `${pilot.firstName} ${pilot.lastName}`,
+            email: pilot.email,
+            phoneNumber: pilot.phoneNumber,
+            lastSeen: new Date(),
+            smallestDistance:
+              existingEntry && distance > existingEntry.smallestDistance
+                ? existingEntry.smallestDistance
+                : distance,
+          });
+        } catch (error) {
+          // TODO: make better error handling
+          console.log("error fetching pilot data");
+        }
       }
     }
-  }
 
-  // check and remove entries older than 10 min
-  for (const [key, value] of pilotInfo) {
-    const diff = new Date().getTime() - value.lastSeen.getTime();
-    const minutes = Math.floor(((diff % 86400000) % 3600000) / 60000);
+    // check and remove entries older than 10 min
+    for (const [key, value] of pilotInfo) {
+      const diff = new Date().getTime() - value.lastSeen.getTime();
+      const minutes = Math.floor(((diff % 86400000) % 3600000) / 60000);
 
-    if (minutes > 9) {
-      pilotInfo.delete(key);
+      if (minutes > 9) {
+        pilotInfo.delete(key);
+      }
     }
+  } catch (error) {
+    // TODO: make better error handling
+    console.log("error fetching drone data");
   }
 };
 
